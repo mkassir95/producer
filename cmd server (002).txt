@@ -1,0 +1,21 @@
+To access the server via SSH:
+
+ssh 10.63.64.48 -l romea -X
+code: romea63*
+
+To start the robot simulation:
+
+source_tiara
+roslaunch tiara_bringup platoon_switcher_simu.launch
+
+To modify the ROS node client.py:
+
+cd /home/romea/ros_ws/dev/tiara_ws/src/ros2kafka/scripts
+open client.py
+
+In client.py, keep all the existing code and add the part that sends data to Esper Java. In Esper, process the data and send the new data back to client.py. Then, in client.py, send the new data to the r2k_pos2 topic. Open a new terminal to visualize the new data sent to the Kafka server with the following command:
+kafka-console-consumer.sh --bootstrap-server 10.63.64.48:9092 --topic r2k_pos
+
+
+
+
