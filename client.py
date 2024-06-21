@@ -12,7 +12,7 @@ from nav_msgs.msg import Odometry
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from std_msgs.msg import String
 import diagnostic_updater
-
+import socket
 no_path_following = False
 try:
     from romea_path_msgs.msg import PathMatchingInfo2D
@@ -102,7 +102,6 @@ class Client:
         self.updater = diagnostic_updater.Updater()
         self.updater.setHardwareID('none')
         self.updater.add('status', self.update_self_diagnostic)
-
         # Common topics
         # rospy.Subscriber(self.topic_gps, NavSatFix, self.callback_gps)
         rospy.Subscriber('localisation/filtered_odom', Odometry, self.callback_odom)
@@ -202,10 +201,26 @@ class Client:
         messageD = messageD + self.diagPathMatchingName + ':' + self.diagPathMatchingText + ','
         messageD = messageD + 'LD_' + self.diagPathMatchingName + ':' + str(
             self.diagPathMatchingLevel) + '}'
+        host = '10.160.17.176'  # The server's hostname or IP address
+        port = 5000        # The port used by the server
+
+        try:
+           with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+               robot_info_message = f"Robot ID: {self.id}, Longitude: {safe_longitude(self.longitude)}, Latitude: {safe_latitude(self.latitude)}, Speed: {safe_speed(self.speed)}"
+                # Encode the message to bytes
+               encoded_message = robot_info_message.encode('utf-8')
+               s.connect((host, port))
+               s.sendall(encoded_message)
+               rospy.loginfo("Message sent to server.")
+        except socket.error as e:
+            rospy.logwarn("Socket error: %s", e)
+        except Exception as e:
+            rospy.logwarn("An error occurred: %s", e)
+
         #  rospy.loginfo(messageD)
 
         try:
-            #rospy.logwarn('----- try to send dat-----')
+            rospy.logwarn('----- try to send data...')
             rospy.logwarn(message)
             # rospy.loginfo(messageD)
             # test = self.producer.send("position_data", value=message.encode("utf-8"))
@@ -230,7 +245,7 @@ class Client:
             self.producer_error_msg = None
             self.updater.update()
         except kafka.errors.KafkaTimeoutError as e:
-            #rospy.logwarn(f"Failed to send data to kafka: {e}")
+            rospy.logwarn(f"Failed to send data to kafka: {e}")
             self.producer_error_msg = str(e)
             self.updater.force_update()
 
@@ -243,7 +258,6 @@ class Client:
         #   rospy.loginfo("gps")
         self.latitude = msg.latitude
         self.longitude = msg.longitude
-        #rospy.logwarn(f"GPS Callback: Latitude = {self.latitude}, Longitude = {self.longitude}")
 
     def callback_path_matching(self, msg):
         self.point_id = msg.matched_points[msg.tracked_matched_point_index].curve_index
@@ -304,10 +318,8 @@ class Client:
 
 if __name__ == '__main__':
     rospy.init_node('ros_client', anonymous=True)
-    rospy.logwarn("Client has been started successfully, but check configurations!")
     try:
         client = Client()
     except rospy.ROSInterruptException:
         pass
     rospy.spin()
-
