@@ -55,6 +55,11 @@ def safe_diagnostic(x):
         return str(x)
 
 
+
+
+
+
+
 class Client:
 
     def __init__(self):
@@ -109,13 +114,19 @@ class Client:
         rospy.Subscriber(self.topic_fsm, String, self.callback_fsm)
         rospy.Timer(rospy.Duration(1 / self.publish_rate), self.callback_timer)
 
+
         # Romea topics optional:
         if not no_path_following:
             rospy.Subscriber(self.topic_path_follow_match, PathMatchingInfo2D,
                              self.callback_path_matching)
 
+
+
+
+
     def callback_timer(self, event):
 
+            # Listen
         # dateDeb = (str(int(round(time. time() * 1000))))
         #    message = '%s %d %03.7f %03.7f %f \r\n'%(event.current_real,self.id,self.latitude,self.longitude,self.speed)
         # Trame du message envoyé au websocket
@@ -133,7 +144,6 @@ class Client:
     #      self.id = 'ALPO_1'
     #  elif (self.id == 'leader') :
     #      self.id = 'ALPO_2'
-
 
         messagedd = ""
         messagedd += str(int(round(time.time() * 1000)))
@@ -201,12 +211,15 @@ class Client:
         messageD = messageD + self.diagPathMatchingName + ':' + self.diagPathMatchingText + ','
         messageD = messageD + 'LD_' + self.diagPathMatchingName + ':' + str(
             self.diagPathMatchingLevel) + '}'
-        host = '10.160.17.176'  # The server's hostname or IP address
+        host = 'localhost'  # The server's hostname or IP address
         port = 5000        # The port used by the server
 
         try:
            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-               robot_info_message = f"Robot ID: {self.id}, Longitude: {safe_longitude(self.longitude)}, Latitude: {safe_latitude(self.latitude)}, Speed: {safe_speed(self.speed)}"
+               # Generate the timestamp in milliseconds
+               current_time = str(int(round(time.time() * 1000)))
+
+               robot_info_message = f"Timestamp: {current_time}, Robot ID: {self.id}, Longitude: {safe_longitude(self.longitude)}, Latitude: {safe_latitude(self.latitude)}, Speed: {safe_speed(self.speed)}"
                 # Encode the message to bytes
                encoded_message = robot_info_message.encode('utf-8')
                s.connect((host, port))
@@ -316,10 +329,15 @@ class Client:
         return stat
 
 
+
+
+
+
 if __name__ == '__main__':
     rospy.init_node('ros_client', anonymous=True)
     try:
         client = Client()
+
     except rospy.ROSInterruptException:
         pass
     rospy.spin()
